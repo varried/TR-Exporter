@@ -1,0 +1,54 @@
+body {
+    width: 220px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 10px;
+}
+
+div.counter {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+span#storage-counter {
+    color: #ff3d3d
+}
+
+button#export-btn {
+    padding: 10px;
+    font-size: 14px;
+    color: #fff;
+    background-color: #ff3d3d;
+    border: none;
+    margin: 5px;
+    cursor: pointer;
+}
+button#export-btn:hover {
+    background-color: red;
+}
+button#clear-storage-btn {
+    padding:10px;
+    font-size: 10px;
+    color: #ff3d3d;
+    background-color: #fff;
+    border: #ff3d3d solid 1px;
+    margin: 5px;
+    cursor: pointer;
+}
+button#clear-storage-btn:hover {
+    color: red;
+    border-color: red;
+}
+div.credits {
+    margin-top: 10px;
+}
+div.credits h1 {
+    margin-bottom: 0;
+    font-size: 12px;
+}
+div.credits span {
+    font-size: 10px;
+}

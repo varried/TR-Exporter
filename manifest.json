@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "TR Exporter",
+  "version": "1.0",
+  "description": "Exports selected products to a CSV file.",
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.etsy.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["checkmark-24.png"],
+      "matches": ["https://www.etsy.com/*"]
+    }
+  ]
+}
