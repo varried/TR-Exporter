@@ -1,5 +1,5 @@
 body {
-    width: 220px;
+    width: 300px;
     height: auto;
     display: flex;
     flex-direction: column;
@@ -17,7 +17,8 @@ span#storage-counter {
     color: #ff3d3d
 }
 
-button#export-btn {
+button#export-btn,
+button#parse-upload-btn {
     padding: 10px;
     font-size: 14px;
     color: #fff;
@@ -26,10 +27,12 @@ button#export-btn {
     margin: 5px;
     cursor: pointer;
 }
-button#export-btn:hover {
+button#export-btn:hover,
+button#parse-upload-btn:hover {
     background-color: red;
 }
-button#clear-storage-btn {
+button#clear-storage-btn,
+button#clear-listing-ids {
     padding:10px;
     font-size: 10px;
     color: #ff3d3d;
@@ -38,9 +41,29 @@ button#clear-storage-btn {
     margin: 5px;
     cursor: pointer;
 }
-button#clear-storage-btn:hover {
+button#clear-storage-btn:hover,
+button#clear-listing-ids:hover {
     color: red;
     border-color: red;
+}
+.csv-upload-wrapper {
+    margin-top: 15px;
+    padding: 5px;
+    width: 95%;
+    background-color: #D3D3D3;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    row-gap: 5px;
+}
+.csv-upload-wrapper label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+#upload-status {
+    font-size: 12px;
+    margin-top: 5px;
 }
 div.credits {
     margin-top: 10px;

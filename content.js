@@ -1,8 +1,11 @@
+// Cached uploaded listing IDs Set (for fast O(1) lookup)
+let cachedListingIdSet = null;
+
 // Initial setup: Add custom option (Add to export option) on initial page load
-let initialElements = document.querySelectorAll("div[data-listings-container] div.wt-grid .v2-listing-card .v2-listing-card__info");
+const initialElements = document.querySelectorAll("div[data-listings-container] div.wt-grid .v2-listing-card .v2-listing-card__info");
 addCustomOption(initialElements);
 
-// Set up a MutationObserver to watch for changes in the DOM
+// Set up a MutationObserver to detect changes (for next/prev Etsy AJAX pages)
 const observer = new MutationObserver((mutationsList, observer) => {
     mutationsList.forEach(mutation => {
         if (mutation.type === 'childList') {
@@ -21,6 +24,17 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Function to add custom 'Add to export' option to page
 function addCustomOption(elements) {
+    if (!elements || elements.length === 0) return;
+
+    // If not cached yet, get from Chrome storage
+    if (cachedListingIdSet === null) {
+        chrome.storage.local.get('etsyListingIds', ({ etsyListingIds }) => {
+            cachedListingIdSet = new Set(Array.isArray(etsyListingIds) ? etsyListingIds : []);
+            processElements(elements);
+        });
+    } else {
+        processElements(elements);
+    }
 
     elements.forEach(function(element) {
 
@@ -42,13 +56,6 @@ function addCustomOption(elements) {
 
             let containerP = document.createElement("div");
             containerP.classList.add("patchwork-container");
-
-            // Create an image element for the checkmark icon
-            /*
-            let checkmark = document.createElement("img");
-            checkmark.src = chrome.runtime.getURL("checkmark-24.png");
-            checkmark.classList.add("tr-checkmark");
-            */
 
             // Create "button" options (rug type)
             let spanText_T = document.createElement("span");
@@ -147,7 +154,7 @@ function addCustomOption(elements) {
                 return;
             }
 
-            function handleYearClick(event, element) {
+            async function handleYearClick(event, element) {
                 const clickedYearItem = event.target;  // The clicked <li> element
  
                 // (1) Get text content of clicked <li> item (year)
@@ -162,19 +169,22 @@ function addCustomOption(elements) {
                 const rugTypeValue = closestSpanInDiv ? closestSpanInDiv.textContent : null;
  
                 if (hrefValue && rugTypeValue && yearValue) {
-                    chrome.runtime.sendMessage({
-                        action: "saveData",
-                        href: hrefValue,
-                        rugType: rugTypeValue,
-                        year: yearValue
-                    }, function(response) {
+                    try {
+                        const response = await chrome.runtime.sendMessage({
+                            action: "saveData",
+                            href: hrefValue,
+                            rugType: rugTypeValue,
+                            year: yearValue
+                        });
                         console.log(response.status);
                         if (response.status === 'Data saved successfully') {
                             tempAlert(`Added - ${yearValue} ${rugTypeValue} Rug`, 1000);
                         } else if (response.status === 'Data already exists') {
                             tempAlert(`Data already exists!`, 1000);
                         }
-                    });
+                    } catch (err) {
+                        console.error("sendMessage error:", err);
+                    }
                 }
             }
 
@@ -192,12 +202,30 @@ function addCustomOption(elements) {
     });
 }
 
+// Processes each listing card: highlight item already in CSV upload listing IDs
+function processElements(elements) {
+    elements.forEach(element => {
+        // Climb up from .v2-listing-card__info to the nearest parent with a listing URL
+        const parentCard = element.closest('.v2-listing-card');
+        const anchor = parentCard ? parentCard.querySelector('a') : null;
+        if (!anchor) return;
+
+        const href = anchor.getAttribute('href');
+        const match = href && href.match(/\/listing\/(\d+)/);
+        const listingId = match ? match[1] : null;
+
+        if (listingId && cachedListingIdSet.has(listingId)) {
+            parentCard.classList.add('highlighted-etsy-item');
+        }
+    });
+}
+
 function tempAlert(msg,duration) {
-    var el = document.createElement("div");
+    const el = document.createElement("div");
     el.classList.add("tr-custom-alert");
     el.innerHTML = msg;
-    setTimeout(function(){
+    setTimeout(() => {
         el.parentNode.removeChild(el);
-    },duration);
-     document.body.appendChild(el);
+    }, duration);
+    document.body.appendChild(el);
 }

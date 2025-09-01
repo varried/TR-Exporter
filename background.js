@@ -1,97 +1,118 @@
+// Map of actions to their respective handlers
+const actions = {
+    saveData: async (request, sendResponse) => {
+        try {
+            const trimmedHref = processHref(request.href);
+            const status = await saveDataToStorage(trimmedHref, request.rugType, request.year);
+            sendResponse({ status });
+        } catch (err) {
+            console.error("saveData error:", err);
+            sendResponse({ status: 'Error saving' });
+        }
+    },
+
+    exportToCSV: async (_, sendResponse) => {
+        try {
+            const status = await exportToCSV();
+            sendResponse({ status });
+        } catch (err) {
+            console.error("exportToCSV error:", err);
+            sendResponse({ status: 'Export failed' });
+        }
+    },
+
+    clearStorage: async (_, sendResponse) => {
+        try {
+            const status = await clearAddedItem();
+            sendResponse({ status });
+        } catch (err) {
+            console.error("clearStorage error:", err);
+            sendResponse({ status: 'Failed to clear dataValues' });
+        }
+    },
+
+    clearListingIds: async (_, sendResponse) => {
+        try {
+            const status = await clearUploaded();
+            sendResponse({ status });
+        } catch (err) {
+            console.error("clearListingIds error:", err);
+            sendResponse({ status: 'Failed to clear etsyListingIds' });
+        }
+    },
+};
+
 // Listen for messages from content script and popup
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log("Message received:", request);
-    if (request.action === "saveData") {
-        // Process the href before saving it
-        let trimmedHref = processHref(request.href);
-        saveDataToStorage(trimmedHref, request.rugType, request.year, sendResponse);
-        return true;  // Keep message channel open for async response
-    } else if (request.action === "exportToCSV") {
-        exportToCSV(sendResponse);
-        return true;
-    } else if (request.action === "clearStorage") {
-        clearStorage(sendResponse);
-        return true;
+
+    const actionHandler = actions[request.action];
+    if (actionHandler) {
+        actionHandler(request, sendResponse);
+        return true; // Keep message channel open for async response
     }
 });
 
 // Function to process the href value using a regular expression
 function processHref(href) {
-    // Remove query parameters
-    let trimmedHref = href.replace(/\?.*$/, '');
+    const trimmedHref = href.replace(/\?.*$/, '');
     console.log('Processed Href:', trimmedHref);
     return trimmedHref;
 }
 
 // Function to save href, rug type, and year value to Chrome storage
-function saveDataToStorage(href, rugType, year, sendResponse) {
-    chrome.storage.local.get({ dataValues: [] }, function(result) {
-        let dataValues = result.dataValues;
+async function saveDataToStorage(href, rugType, year) {
+    const result = await chrome.storage.local.get({ dataValues: [] });
+    const dataValues = result.dataValues;
+    const hrefExists = dataValues.some(item => item.href === href);
 
-        // Check if href already exists in storage
-        let hrefExists = dataValues.some(item => item.href === href);
+    // Check if href already exists in storage
+    if (hrefExists) {
+        return 'Data already exists';
+    }
 
-        if (!hrefExists) {
-            dataValues.push({ href: href, rugType: rugType, year: year });
-
-            chrome.storage.local.set({ dataValues: dataValues }, function() {
-                if (chrome.runtime.lastError) {
-                    console.error("Error saving:", chrome.runtime.lastError);
-                    sendResponse({ status: 'Error saving' });
-                } else {
-                    console.log(`Saved Href: ${href}, Rug Type: ${rugType}, Year: ${year}`);
-                    sendResponse({ status: 'Data saved successfully' });
-                }
-            });
-        } else {
-          sendResponse({ status: 'Data already exists' });
-        }
-    });
+    dataValues.push({ href, rugType, year });
+    await chrome.storage.local.set({ dataValues });
+    console.log(`Saved Href: ${href}, Rug Type: ${rugType}, Year: ${year}`);
+    return 'Data saved successfully';
 }
 
 // Function to export data to CSV file
-function exportToCSV(sendResponse) {
-    chrome.storage.local.get({ dataValues: [] }, function(result) {
-        let dataValues = result.dataValues;
+async function exportToCSV() {
+    const result = await chrome.storage.local.get({ dataValues: [] });
+    const { dataValues } = result;
 
-        if (dataValues.length === 0) {
-            console.warn("No links have been captured yet.");
-            sendResponse({ status: 'No links to export' });
-            return;
-        }
+    if (dataValues.length === 0) {
+        console.warn("No links have been captured yet.");
+        return 'No links to export';
+    }
 
-        // Create CSV content with headers and rows for each entry
-        let csvContent = "data:text/csv;charset=utf-8," + 
-                         "URL,Type,Year\n" +  // Adding headers
-                         dataValues.map(item => `${item.href},${item.rugType},${item.year}`).join("\n");
+    const csvContent =
+        "data:text/csv;charset=utf-8," +
+        "URL,Type,Year\n" +
+        dataValues.map(({ href, rugType, year }) => `${href},${rugType},${year}`).join("\n");
 
-        // Use chrome.downloads API to download the CSV file
-        chrome.downloads.download({
-            url: encodeURI(csvContent),
-            filename: 'tr_exported_data.csv',
-            conflictAction: 'overwrite',
-            saveAs: true
-        }, function(downloadId) {
-            if (chrome.runtime.lastError) {
-                console.error("Download error:", chrome.runtime.lastError);
-                sendResponse({ status: 'Download failed' });
-            } else {
-                console.log('CSV exported successfully');
-                sendResponse({ status: 'CSV exported successfully' });
-            }
-        });
+    await chrome.downloads.download({
+        url: encodeURI(csvContent),
+        filename: 'tr_exported_data.csv',
+        conflictAction: 'overwrite',
+        saveAs: true
     });
+
+    console.log('CSV exported successfully');
+    return 'CSV exported successfully';
 }
 
-// Function to clear stored data
-function clearStorage(sendResponse) {
-    chrome.storage.local.clear(function() {
-        if (chrome.runtime.lastError) {
-            console.error("Error clearing storage:", chrome.runtime.lastError);
-            sendResponse({ status: 'Failed to clear storage' });
-        } else {
-            console.log('All storage cleared');
-            sendResponse({ status: 'Storage cleared' });
-        }
-    });
+// Function to clear added rug data
+async function clearAddedItem() {
+    await chrome.storage.local.remove('dataValues');
+    console.log('dataValues cleared');
+    return 'Data cleared';
+}
+
+// Function to clear uploaded listing IDs
+async function clearUploaded() {
+    await chrome.storage.local.remove('etsyListingIds');
+    console.log('etsyListingIds cleared');
+    return 'Uploaded cleared';
 }

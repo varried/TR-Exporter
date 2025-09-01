@@ -8,10 +8,18 @@
 </head>
 <body>
     <div class="counter">Items added: <span id="storage-counter">0</span></div>
-    <button id="export-btn">Export to CSV</button>
-    <button id="clear-storage-btn">Clear Storage</button>
+    <button id="export-btn">EXPORT TO CSV</button>
+    <button id="clear-storage-btn">CLEAR ITEMS</button>
+    <div class="csv-upload-wrapper">
+        <label for="csv-upload">Upload CSV (listing ID):</label>
+        <input type="file" id="csv-upload" accept=".csv" />
+        <button id="parse-upload-btn">Upload & Parse</button>
+        <button id="clear-listing-ids">Clear Uploaded</button>
+        <div id="upload-status"></div>
+    </div>
     <div class="credits"><h1>TR Exporter</h1><span><em>by: Varrie D.</em></span></div>
 
+    <script src="lib/papaparse.min.js"></script> <!-- For CSV parsing -->
     <script src="popup.js"></script>
 </body>
 </html>

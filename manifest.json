@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TR Exporter",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Exports selected products to a CSV file.",
   "icons": {
     "48": "icon48.png",
