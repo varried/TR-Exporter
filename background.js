@@ -1,9 +1,21 @@
+// Run item saves and clears in order, including each operation's storage read.
+let itemStorageQueue = Promise.resolve();
+
+function queueItemStorageOperation(operation) {
+    const result = itemStorageQueue.then(operation);
+    // Keep the queue usable after a failure while returning that failure to the caller.
+    itemStorageQueue = result.catch(() => {});
+    return result;
+}
+
 // Map of actions to their respective handlers
 const actions = {
     saveData: async (request, sendResponse) => {
         try {
             const trimmedHref = processHref(request.href);
-            const status = await saveDataToStorage(trimmedHref, request.rugType, request.year);
+            const status = await queueItemStorageOperation(() =>
+                saveDataToStorage(trimmedHref, request.rugType, request.year)
+            );
             sendResponse({ status });
         } catch (err) {
             console.error("saveData error:", err);
@@ -23,7 +35,7 @@ const actions = {
 
     clearStorage: async (_, sendResponse) => {
         try {
-            const status = await clearAddedItem();
+            const status = await queueItemStorageOperation(clearAddedItem);
             sendResponse({ status });
         } catch (err) {
             console.error("clearStorage error:", err);

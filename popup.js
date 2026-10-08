@@ -68,7 +68,6 @@ document.getElementById('clear-listing-ids').addEventListener('click', async () 
 // DOM Ready 
 document.addEventListener('DOMContentLoaded', () => {
     const counterElement = document.getElementById('storage-counter');
-    const clearButton = document.getElementById('clear-storage-btn');
     const uploadStatus = document.getElementById('upload-status');
 
     // Function to fetch and update the added rug data counter
@@ -84,16 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const count = result.etsyListingIds.length || 0;
         uploadStatus.textContent = `Stored ${count} listing ID(s).`;
     }
-
-    // Button event to clear added rug data storage
-    clearButton.addEventListener('click', async () => {
-        const response = await sendMessage({ action: "clearStorage" });
-        if (response.status === 'Data cleared') {
-            updateCounter();
-        } else {
-            alert("Failed to clear storage.");
-        }
-    });
 
     // Initial updates on popup load
     updateCounter();

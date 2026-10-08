@@ -160,9 +160,10 @@ function addCustomOption(elements) {
                 // (1) Get text content of clicked <li> item (year)
                 const yearValue = clickedYearItem.textContent;
  
-                // (2) Get href value from closest <a> tag of this element's parent <div>
-                const parentWithHref = element.closest('a');
-                const hrefValue = parentWithHref ? parentWithHref.href : null;
+                // (2) Find the listing link within the surrounding card.
+                const parentCard = element.closest('.v2-listing-card');
+                const anchor = parentCard?.querySelector('a[href*="/listing/"]');
+                const hrefValue = anchor ? anchor.href : null;
  
                 // (3) Get text content of closest <span> (rug type) under same <div> as clicked <li>
                 const closestSpanInDiv = clickedYearItem.closest('div').querySelector('span');
