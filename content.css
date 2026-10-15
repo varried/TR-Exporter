@@ -1,3 +1,26 @@
+.v2-listing-card.tr-exporter-numbered-card {
+    position: relative;
+    margin-top: 28px !important;
+    overflow: visible;
+}
+
+.v2-listing-card > .tr-exporter-item-number {
+    position: absolute;
+    top: -26px;
+    left: 12px;
+    z-index: 99;
+    min-width: 24px;
+    padding: 2px 6px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    background: #25354a;
+    color: #fff;
+    font: 700 12px/18px Arial, sans-serif;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+}
+
 div.tr-exporter-container {
     display: flex;
     align-items: center;

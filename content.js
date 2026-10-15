@@ -1,21 +1,50 @@
 // Cached uploaded listing IDs Set (for fast O(1) lookup)
 let cachedListingIdSet = null;
 
-// Initial setup: Add custom option (Add to export option) on initial page load
-const initialElements = document.querySelectorAll("div[data-listings-container] div.wt-grid .v2-listing-card .v2-listing-card__info");
-addCustomOption(initialElements);
+const listingCardSelector = "div[data-listings-container] div.wt-grid .v2-listing-card";
+
+function refreshListingCards() {
+    addCustomOption(document.querySelectorAll(`${listingCardSelector} .v2-listing-card__info`));
+    updatePageItemNumbers();
+}
+
+// Count every card, including inventory matches and skipped items, in page order.
+// No shop-wide offset or saved-export count participates in these numbers.
+function updatePageItemNumbers() {
+    document.querySelectorAll('div[data-listings-container]').forEach(container => {
+        container.querySelectorAll('div.wt-grid .v2-listing-card').forEach((card, index) => {
+            let label = card.querySelector('.tr-exporter-item-number');
+            if (index >= 36) {
+                label?.remove();
+                card.classList.remove('tr-exporter-numbered-card');
+                return;
+            }
+            const number = String(index + 1);
+            if (!label) {
+                label = document.createElement('span');
+                label.classList.add('tr-exporter-item-number');
+                card.appendChild(label);
+            }
+            card.classList.add('tr-exporter-numbered-card');
+            if (label.textContent !== number) label.textContent = number;
+            label.setAttribute('aria-label', `Item ${number} on this page`);
+        });
+    });
+}
+
+refreshListingCards();
 
 // Set up a MutationObserver to detect changes (for next/prev Etsy AJAX pages)
-const observer = new MutationObserver((mutationsList, observer) => {
-    mutationsList.forEach(mutation => {
-        if (mutation.type === 'childList') {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    let newElements = node.querySelectorAll("div[data-listings-container] div.wt-grid .v2-listing-card .v2-listing-card__info");
-                    addCustomOption(newElements);
-                }
-            });
-        }
+let refreshScheduled = false;
+const observer = new MutationObserver(mutationsList => {
+    // Include removals and individual card insertions, not only whole-grid replacements.
+    const elementsChanged = mutationsList.some(mutation =>
+        [...mutation.addedNodes, ...mutation.removedNodes].some(node => node.nodeType === Node.ELEMENT_NODE));
+    if (!elementsChanged || refreshScheduled) return;
+    refreshScheduled = true;
+    requestAnimationFrame(() => {
+        refreshScheduled = false;
+        refreshListingCards();
     });
 });
 
